@@ -15,19 +15,33 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Cabang
-        Branch::create(['name' => 'Clean Shoes Jejak Suci Jonggol (Pusat)', 'address' => 'Jl. Citra Indah, Jonggol', 'is_main' => true]);
-        Branch::create(['name' => 'Clean Shoes Jejak Suci Cikarang', 'address' => 'Cikarang']);
+        Branch::firstOrCreate(
+            ['name' => 'Clean Shoes Jejak Suci Jonggol (Pusat)'],
+            ['address' => 'Jl. Citra Indah, Jonggol', 'is_main' => true]
+        );
+        Branch::firstOrCreate(
+            ['name' => 'Clean Shoes Jejak Suci Cikarang'],
+            ['address' => 'Cikarang', 'is_main' => false]
+        );
 
         // User
         foreach ([
             ['Owner Jejak Suci', 'owner@jejaksuci.com', 'owner', '08111111111'],
+            ['Admin Jejak Suci Cikarang', 'admin@cikarang.com', 'admin', '08122222222'],
             ['Admin Jejak Suci', 'admin@jejaksuci.com', 'admin', '08122222222'],
             ['Kasir Jejak Suci', 'kasir@jejaksuci.com', 'kasir', '08133333333'],
         ] as [$name, $email, $role, $phone]) {
-            User::create([
-                'name' => $name, 'email' => $email, 'password' => Hash::make('password'),
-                'role' => $role, 'phone' => $phone, 'is_active' => true, 'email_verified_at' => now(),
-            ]);
+            User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name, 
+                    'password' => Hash::make('password'),
+                    'role' => $role, 
+                    'phone' => $phone, 
+                    'is_active' => true, 
+                    'email_verified_at' => now(),
+                ]
+            );
         }
 
         // Layanan
@@ -38,7 +52,10 @@ class DatabaseSeeder extends Seeder
             ['Reguler Half Face',          'helm',    40000, 3],
             ['Reguler Full Face',         'helm',   45000, 2],
         ] as [$n, $c, $p, $d]) {
-            Service::create(['name' => $n, 'category' => $c, 'price' => $p, 'duration_days' => $d]);
+            Service::firstOrCreate(
+                ['name' => $n],
+                ['category' => $c, 'price' => $p, 'duration_days' => $d]
+            );
         }
 
         // Keunggulan
@@ -48,7 +65,10 @@ class DatabaseSeeder extends Seeder
             ['🔎', 'Cek Pesanan Online', 'Pantau cucian kapan saja dengan nomor invoice.'],
             ['🏅', 'Poin & Diskon Member', 'Makin sering cuci, makin hemat.'],
         ] as $i => [$icon, $title, $desc]) {
-            Feature::create(['icon' => $icon, 'title' => $title, 'description' => $desc, 'sort_order' => $i + 1]);
+            Feature::firstOrCreate(
+                ['title' => $title],
+                ['icon' => $icon, 'description' => $desc, 'sort_order' => $i + 1]
+            );
         }
 
         // FAQ
@@ -60,7 +80,10 @@ class DatabaseSeeder extends Seeder
             ['Bagaimana cara mendapat diskon member?', 'Daftar gratis lewat website. Setiap transaksi lunas menambah total belanja, lalu tier naik otomatis ke Silver dan Gold.'],
             ['Metode pembayaran apa saja yang diterima?', 'Tunai, transfer bank, dan QRIS. Pembayaran dicatat oleh kasir dan tampil di riwayat pesanan Anda.'],
         ] as $i => [$q, $a]) {
-            Faq::create(['question' => $q, 'answer' => $a, 'sort_order' => $i + 1]);
+            Faq::firstOrCreate(
+                ['question' => $q],
+                ['answer' => $a, 'sort_order' => $i + 1]
+            );
         }
     }
 }
