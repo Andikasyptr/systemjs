@@ -21,7 +21,7 @@ class CmsBranchController extends Controller
         $data = $this->rules($request);
 
         if ($request->hasFile('qris')) {
-            $data['qris'] = $request->file('qris')->store('qris', 'public');
+            $data['qris_path'] = $request->file('qris')->store('qris', 'public');
         }
 
         Branch::create($data);
@@ -34,13 +34,13 @@ class CmsBranchController extends Controller
         $data = $this->rules($request);
 
         if ($request->hasFile('qris')) {
-            if ($branch->qris) {
-                Storage::disk('public')->delete($branch->qris);
+            if ($branch->qris_path) {
+                Storage::disk('public')->delete($branch->qris_path);
             }
-            $data['qris'] = $request->file('qris')->store('qris', 'public');
-        } elseif ($request->boolean('remove_qris') && $branch->qris) {
-            Storage::disk('public')->delete($branch->qris);
-            $data['qris'] = null;
+            $data['qris_path'] = $request->file('qris')->store('qris', 'public');
+        } elseif ($request->boolean('remove_qris') && $branch->qris_path) {
+            Storage::disk('public')->delete($branch->qris_path);
+            $data['qris_path'] = null;
         }
 
         $branch->update($data);
@@ -54,8 +54,8 @@ class CmsBranchController extends Controller
             return back()->withErrors(['branch' => 'Cabang ini sudah punya pesanan, tidak bisa dihapus.']);
         }
 
-        if ($branch->qris) {
-            Storage::disk('public')->delete($branch->qris);
+        if ($branch->qris_path) {
+            Storage::disk('public')->delete($branch->qris_path);
         }
         $branch->delete();
 
