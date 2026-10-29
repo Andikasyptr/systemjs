@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 // ---------- PUBLIK ----------
 Route::get('/', [PublicController::class, 'home'])->name('home');
-Route::get('/cek-pesanan', [PublicController::class, 'track'])->name('track');
+Route::get('/cek-pesanan', [PublicController::class, 'track'])->middleware('throttle:20,1')->name('track');
 Route::post('/pertanyaan', [PublicController::class, 'storeInquiry'])
     ->middleware('throttle:5,1')->name('inquiry.store');
 

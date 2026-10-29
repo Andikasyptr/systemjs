@@ -38,16 +38,18 @@ class PublicController extends Controller
     }
 
     public function track(Request $request)
-    {
-        $order = null;
+{
+    $order = null;
 
-        if ($request->filled(['invoice', 'phone'])) {
-            $order = Order::with('items', 'customer', 'branch')
-                ->where('invoice_no', $request->invoice)
-                ->whereHas('customer', fn ($q) => $q->where('phone', $request->phone))
-                ->first();
-        }
+    if ($request->filled(['invoice', 'phone'])) {
+        $phone = \App\Models\Customer::normalizePhone($request->phone);
 
-        return view('track', compact('order'));
+        $order = Order::with('items', 'customer', 'branch')
+            ->where('invoice_no', strtoupper(trim($request->invoice)))
+            ->whereHas('customer', fn ($q) => $q->where('phone', $phone))
+            ->first();
     }
+
+    return view('track', compact('order'));
+}
 }

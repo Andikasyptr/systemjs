@@ -25,8 +25,8 @@
         return;
       }
       
-      // Batas maksimal dinaikkan menjadi 20 MB (20 * 1024 * 1024 bytes)
-      if (file.size > 20 * 1024 * 1024) {
+      // Batas maksimal 1 MB (1 * 1024 * 1024 bytes)
+      if (file.size > 1 * 1024 * 1024) {
         this.tooLarge = true;
         e.target.value = ''; 
         this.previews = [];
@@ -91,7 +91,7 @@
     <div>
       <p class="text-sm font-bold">3. Foto barang</p>
       <p class="text-xs text-neutral-500">
-        💡 <strong class="text-neutral-700">Cukup 1 foto saja!</strong> Letakkan dan kumpulkan semua barang dalam satu frame foto berdampingan (maksimal 20 MB). Foto dihapus otomatis setelah 1 bulan.
+        💡 <strong class="text-neutral-700">Cukup 1 foto saja!</strong> Letakkan dan kumpulkan semua barang dalam satu frame foto berdampingan (<strong class="text-red-600">maksimal 1 MB</strong>).
       </p>
     </div>
 
@@ -101,9 +101,9 @@
       <input type="file" name="photos[]" accept="image/*" class="sr-only" @change="pick($event)" required>
     </label>
 
-    {{-- Pesan Error jika ukuran melebihi 20MB --}}
+    {{-- Pesan Error jika ukuran melebihi 1MB --}}
     <p x-show="tooLarge" x-cloak class="text-sm font-semibold text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
-      ⚠️ Ukuran gambar melebihi 20 MB. Mohon pilih foto lain yang ukurannya lebih kecil.
+      ⚠️ Ukuran gambar melebihi 1 MB. Mohon kompres atau pilih foto lain yang ukurannya lebih kecil.
     </p>
 
     <div x-show="previews.length" x-cloak class="grid grid-cols-1 gap-2">
