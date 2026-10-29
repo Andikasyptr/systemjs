@@ -101,7 +101,7 @@
     <div class="flex justify-between"><span>Subtotal</span><span x-text="'Rp ' + fmt(subtotal)"></span></div>
     <div class="flex justify-between text-red-600"><span>Diskon member ({{ $customer->tier }} <span x-text="pct"></span>%)</span><span x-text="'- Rp ' + fmt(discount)"></span></div>
     <div class="flex justify-between border-t pt-2 text-lg font-extrabold"><span>Estimasi total</span><span class="text-red-600" x-text="'Rp ' + fmt(total)"></span></div>
-    <p class="text-xs text-neutral-500" x-show="days > 0">Estimasi selesai ±<span x-text="days"></span> hari setelah barang diterima.</p>
+    <p class="text-xs text-neutral-500" x-show="days > 0">Estimasi selesai ±<span x-text="2"></span> hari setelah barang diterima.</p>
     <p class="pt-2 text-xs text-neutral-500">Harga final dikonfirmasi admin setelah kondisi barang dicek. Pembayaran dilakukan di kasir atau via QRIS.</p>
   </div>
 
