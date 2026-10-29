@@ -1,0 +1,17 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#8716
+    [34mall[39m: [
+      [34;4mApp\Models\Customer[39;24m {#8715
+        [34mid[39m: [35m1[39m,
+        [34muser_id[39m: [36mnull[39m,
+        [34mbranch_id[39m: [35m3[39m,
+        [34mmember_code[39m: [32m"[39m[32mJS-00001[39m[32m"[39m,
+        [34mname[39m: [32m"[39m[32mAndika syaputra[39m[32m"[39m,
+        [34mphone[39m: [32m"[39m[32m08978475687[39m[32m"[39m,
+        [34maddress[39m: [32m"[39m[32mwalahir[39m[32m"[39m,
+        [34mpoints[39m: [35m0[39m,
+        [34mtotal_spent[39m: [35m0[39m,
+        [34mcreated_at[39m: [32m"[39m[32m2026-10-10 00:20:40[39m[32m"[39m,
+        [34mupdated_at[39m: [32m"[39m[32m2026-10-10 00:20:40[39m[32m"[39m,
+      },
+    ],
+  }
