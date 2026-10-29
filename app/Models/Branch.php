@@ -14,9 +14,10 @@ class Branch extends Model
     // URL gambar QRIS cabang (null jika belum diunggah)
     public function getQrisUrlAttribute(): ?string
     {
-        return $this->qris_path ? Storage::disk('public')->url($this->qris_path) : null;
+        return $this->qris ? Storage::disk('public')->url($this->qris) : null;
     }
-        public function customers()
+
+    public function customers()
     {
         return $this->hasMany(Customer::class);
     }
