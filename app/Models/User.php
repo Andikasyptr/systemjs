@@ -42,7 +42,11 @@ class User extends Authenticatable
 
     // null = boleh melihat semua cabang (owner, atau staf yang belum diberi cabang)
     public function branchScope(): ?int
-    {
-        return $this->role === 'owner' ? null : $this->branch_id;
+{
+    if ($this->role === 'owner') {
+        return $this->branch_id ? (int) $this->branch_id : null;
     }
+
+    return (int) $this->branch_id;
+}
 }

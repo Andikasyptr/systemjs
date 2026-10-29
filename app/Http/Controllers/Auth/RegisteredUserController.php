@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -17,7 +18,9 @@ class RegisteredUserController extends Controller
 {
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'branches' => Branch::orderByDesc('is_main')->orderBy('id')->get(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -25,10 +28,12 @@ class RegisteredUserController extends Controller
         $request->merge(['phone' => Customer::normalizePhone($request->phone)]);
 
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-            'phone'    => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'name'      => ['required', 'string', 'max:255'],
+            'email'     => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            'phone'     => ['required', 'string', 'max:20'],
+            'address'   => ['required', 'string', 'max:500'],
+            'branch_id' => ['required', 'exists:branches,id'],
+            'password'  => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
@@ -36,20 +41,26 @@ class RegisteredUserController extends Controller
             'email'    => $request->email,
             'phone'    => $request->phone,
             'password' => Hash::make($request->password),
-            'role'     => 'customer', // dipaksa customer, tidak dari input
+            'role'     => 'customer',
         ]);
 
         // Tautkan ke data pelanggan yang sudah diinput admin (nomor HP sama)
         $customer = Customer::where('phone', $request->phone)->whereNull('user_id')->first();
 
         if ($customer) {
-            $customer->update(['user_id' => $user->id]);
+            $customer->update([
+                'user_id'   => $user->id,
+                'address'   => $customer->address ?: $request->address,
+                'branch_id' => $customer->branch_id ?: $request->branch_id,
+            ]);
         } else {
             Customer::create([
                 'user_id'     => $user->id,
                 'member_code' => Customer::generateCode(),
                 'name'        => $user->name,
                 'phone'       => $user->phone,
+                'address'     => $request->address,
+                'branch_id'   => $request->branch_id,
             ]);
         }
 
@@ -57,7 +68,6 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // Kembali ke tujuan semula (mis. form pesan), bukan selalu dashboard
         return redirect()->intended(route('dashboard', absolute: false));
     }
 }

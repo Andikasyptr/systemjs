@@ -26,17 +26,21 @@ class OrderController extends Controller
 
     public function create()
     {
-        $branchId = auth()->user()->branchScope();
+        $scope = auth()->user()->branchScope();
+        abort_if($scope === 0, 403, 'Akun Anda belum diatur cabangnya. Hubungi owner.');
 
         return view('orders.create', [
             'customers' => Customer::orderBy('name')->get(),
-            'branches'  => $branchId ? Branch::where('id', $branchId)->get() : Branch::orderByDesc('is_main')->orderBy('id')->get(),
+            'branches'  => $scope !== null ? Branch::where('id', $scope)->get() : Branch::orderByDesc('is_main')->orderBy('id')->get(),
             'services'  => Service::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
+        $scope = auth()->user()->branchScope();
+        abort_if($scope === 0, 403, 'Akun Anda belum diatur cabangnya. Hubungi owner.');
+
         $data = $request->validate([
             'customer_id'        => 'required|exists:customers,id',
             'branch_id'          => 'required|exists:branches,id',
@@ -48,13 +52,10 @@ class OrderController extends Controller
             'items.*.qty'        => 'required|integer|min:1',
             'photos'             => 'nullable|array|max:5',
             'photos.*'           => 'image|mimes:jpg,jpeg,png,webp|max:4096',
-        ], [
-            'photos.max'   => 'Maksimal 5 foto.',
-            'photos.*.max' => 'Ukuran tiap foto maksimal 4 MB.',
         ]);
 
-        // Admin cabang hanya boleh membuat pesanan untuk cabangnya sendiri
-        if ($scope = auth()->user()->branchScope()) {
+        // Admin cabang selalu mencatat ke cabangnya sendiri
+        if ($scope !== null) {
             $data['branch_id'] = $scope;
         }
 
@@ -87,17 +88,12 @@ class OrderController extends Controller
                 $subtotal += $line;
             }
 
-            // Foto barang (satu foto berlaku untuk semua treatment)
             foreach ($request->file('photos', []) as $file) {
                 $order->photos()->create(['path' => $file->store('order-photos', 'public')]);
             }
 
             $discount = intdiv($subtotal * $customer->discount_percent, 100);
-            $order->update([
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'total'    => $subtotal - $discount,
-            ]);
+            $order->update(['subtotal' => $subtotal, 'discount' => $discount, 'total' => $subtotal - $discount]);
 
             return $order;
         });

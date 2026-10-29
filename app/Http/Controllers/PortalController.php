@@ -32,11 +32,11 @@ class PortalController extends Controller
         }
 
         return $customer ?? Customer::create([
-            'user_id'     => $user->id,
-            'member_code' => Customer::generateCode(),
-            'name'        => $user->name,
-            'phone'       => $phone ?: (string) $user->phone,
-        ]);
+                'user_id'     => $user->id,
+                'member_code' => Customer::generateCode(),
+                'name'        => $user->name,
+                'phone'       => $phone ?: (string) $user->phone,
+            ]);
     }
 
     public function index()

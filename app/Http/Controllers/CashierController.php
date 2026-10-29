@@ -15,7 +15,7 @@ class CashierController extends Controller
 
         $payments = Payment::with('order.customer', 'receiver')
             ->whereDate('paid_at', $date)
-            ->when($branchId, fn ($q) => $q->whereHas('order', fn ($o) => $o->where('branch_id', $branchId)))
+            ->when($branchId !== null, fn ($q) => $q->whereHas('order', fn ($o) => $o->where('branch_id', $branchId)))
             ->latest('paid_at')->get();
 
         $byMethod = $payments->groupBy('method')->map->sum('amount');

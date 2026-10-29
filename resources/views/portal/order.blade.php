@@ -2,8 +2,6 @@
 @section('title', 'Pesan Cucian')
 @section('content')
 
-<a href="{{ route('portal.orders') }}" class="text-sm text-neutral-600 hover:text-red-600">← Pesanan Saya</a>
-
 <form method="POST" action="{{ route('portal.order.store') }}" enctype="multipart/form-data" class="space-y-4"
   x-data="{
     services: {{ $services->map(fn ($s) => ['id' => $s->id, 'price' => $s->price, 'days' => $s->duration_days])->toJson() }},
@@ -28,57 +26,63 @@
   }">
   @csrf
 
-  <div class="card">
-    <label class="label">Antar ke cabang</label>
-    <select name="branch_id" class="input" required>
+  {{-- 1. Cabang --}}
+  <div class="card !p-4">
+    <p class="mb-2 text-sm font-bold">1. Antar ke cabang</p>
+    <select name="branch_id" class="input !py-3" required>
       @foreach ($branches as $b)
-        <option value="{{ $b->id }}" @selected(old('branch_id') == $b->id)>{{ $b->name }} — {{ $b->address }}</option>
+        <option value="{{ $b->id }}" @selected(old('branch_id') == $b->id)>{{ $b->name }}</option>
       @endforeach
     </select>
+    <p class="mt-2 text-xs text-neutral-500">Pesanan masuk ke admin cabang yang dipilih, dan pembayaran QRIS memakai QRIS cabang itu.</p>
   </div>
 
-  <div class="card space-y-3">
-    <h3 class="font-bold">Treatment yang dipilih</h3>
+  {{-- 2. Treatment --}}
+  <div class="space-y-3">
+    <p class="text-sm font-bold">2. Treatment & barang</p>
 
     <template x-for="(item, idx) in items" :key="idx">
-      <div class="grid gap-3 rounded-xl border border-neutral-200 p-3 md:grid-cols-12 md:border-0 md:p-0">
-        <div class="md:col-span-4">
-          <select :name="`items[${idx}][service_id]`" x-model="item.service_id" class="input" required>
-            <option value="">- pilih treatment -</option>
-            @foreach ($services as $s)
-              <option value="{{ $s->id }}">[{{ ucfirst($s->category) }}] {{ $s->name }} — Rp {{ number_format($s->price, 0, ',', '.') }}</option>
-            @endforeach
-          </select>
+      <div class="card space-y-3 !p-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wide text-neutral-500" x-text="'Barang ' + (idx + 1)"></span>
+          <button type="button" @click="items.splice(idx, 1)" x-show="items.length > 1"
+                  class="grid h-8 w-8 place-items-center rounded-full bg-neutral-100 text-neutral-600" aria-label="Hapus">✕</button>
         </div>
-        <div class="md:col-span-4">
-          <input :name="`items[${idx}][item_name]`" x-model="item.item_name" class="input" placeholder="Nama barang (mis. Nike AF1 putih)" required>
-        </div>
-        <div class="md:col-span-1">
-          <input type="number" min="1" max="20" :name="`items[${idx}][qty]`" x-model="item.qty" class="input" required>
-        </div>
-        <div class="flex items-center text-sm font-medium md:col-span-2" x-text="'Rp ' + fmt(line(item))"></div>
-        <div class="md:col-span-1">
-          <button type="button" class="btn-danger" @click="items.splice(idx, 1)" x-show="items.length > 1">✕</button>
+
+        <select :name="`items[${idx}][service_id]`" x-model="item.service_id" class="input !py-3" required>
+          <option value="">- pilih treatment -</option>
+          @foreach ($services as $s)
+            <option value="{{ $s->id }}">[{{ ucfirst($s->category) }}] {{ $s->name }} — Rp {{ number_format($s->price, 0, ',', '.') }}</option>
+          @endforeach
+        </select>
+
+        <input :name="`items[${idx}][item_name]`" x-model="item.item_name" class="input !py-3" placeholder="Nama barang (mis. Nike AF1 putih)" required>
+
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center rounded-xl border border-neutral-300">
+            <button type="button" @click="item.qty = Math.max(1, item.qty - 1)" class="h-11 w-11 text-xl font-bold text-red-600">−</button>
+            <span class="w-10 text-center font-semibold" x-text="item.qty"></span>
+            <button type="button" @click="item.qty = Math.min(20, item.qty + 1)" class="h-11 w-11 text-xl font-bold text-red-600">+</button>
+          </div>
+          <input type="hidden" :name="`items[${idx}][qty]`" :value="item.qty">
+          <p class="text-right text-base font-extrabold text-red-600" x-text="'Rp ' + fmt(line(item))"></p>
         </div>
       </div>
     </template>
 
-    <button type="button" class="btn-light" @click="add()">+ Tambah treatment / barang</button>
+    <button type="button" @click="add()" class="w-full rounded-2xl border-2 border-dashed border-neutral-300 py-3 text-sm font-semibold text-neutral-600 active:bg-neutral-50">+ Tambah treatment / barang</button>
   </div>
 
-  {{-- Foto barang --}}
-  <div class="card space-y-3">
+  {{-- 3. Foto --}}
+  <div class="card space-y-3 !p-4">
     <div>
-      <h3 class="font-bold">Foto barang</h3>
-      <p class="text-xs text-neutral-500">
-        Satu foto cukup jika barangnya sama dengan beberapa treatment. Jika barangnya berbeda, pilih beberapa foto sekaligus (maks 5 foto, 4 MB per foto).
-      </p>
+      <p class="text-sm font-bold">3. Foto barang</p>
+      <p class="text-xs text-neutral-500">Satu foto cukup jika barangnya sama dengan beberapa treatment. Jika barang berbeda, pilih beberapa foto (maks 5, 4 MB per foto). Foto dihapus otomatis setelah 1 bulan.</p>
     </div>
 
-    <label class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-neutral-300 p-6 text-center hover:border-red-400 hover:bg-red-50">
+    <label class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-neutral-300 p-6 text-center active:bg-red-50">
       <span class="text-3xl">📷</span>
-      <span class="text-sm font-semibold">Ketuk untuk pilih foto</span>
-      <span class="text-xs text-neutral-500">JPG, PNG, atau WEBP</span>
+      <span class="text-sm font-semibold">Ambil / pilih foto</span>
       <input type="file" name="photos[]" accept="image/*" multiple class="sr-only" @change="pick($event)">
     </label>
 
@@ -89,22 +93,31 @@
         <img :src="src" class="aspect-square w-full rounded-lg border object-cover" alt="Pratinjau foto">
       </template>
     </div>
-    <p x-show="previews.length" x-cloak class="text-xs text-neutral-500">
-      <span x-text="previews.length"></span> foto dipilih. Pilih ulang untuk mengganti.
-    </p>
   </div>
 
-  <div class="card"><label class="label">Catatan (opsional)</label>
-    <textarea name="notes" rows="2" class="input" placeholder="Mis. noda kopi di bagian depan.">{{ old('notes') }}</textarea></div>
+  {{-- 4. Catatan --}}
+  <div class="card !p-4">
+    <p class="mb-2 text-sm font-bold">4. Catatan <span class="font-normal text-neutral-400">(opsional)</span></p>
+    <textarea name="notes" rows="2" class="input" placeholder="Mis. noda kopi di bagian depan.">{{ old('notes') }}</textarea>
+  </div>
 
-  <div class="card space-y-1 text-sm">
+  {{-- Ringkasan --}}
+  <div class="card space-y-1 !p-4 text-sm">
     <div class="flex justify-between"><span>Subtotal</span><span x-text="'Rp ' + fmt(subtotal)"></span></div>
-    <div class="flex justify-between text-red-600"><span>Diskon member ({{ $customer->tier }} <span x-text="pct"></span>%)</span><span x-text="'- Rp ' + fmt(discount)"></span></div>
-    <div class="flex justify-between border-t pt-2 text-lg font-extrabold"><span>Estimasi total</span><span class="text-red-600" x-text="'Rp ' + fmt(total)"></span></div>
-    <p class="text-xs text-neutral-500" x-show="days > 0">Estimasi selesai ±<span x-text="2"></span> hari setelah barang diterima.</p>
-    <p class="pt-2 text-xs text-neutral-500">Harga final dikonfirmasi admin setelah kondisi barang dicek. Pembayaran dilakukan di kasir atau via QRIS.</p>
+    <div class="flex justify-between text-red-600"><span>Diskon {{ $customer->tier }} (<span x-text="pct"></span>%)</span><span x-text="'- Rp ' + fmt(discount)"></span></div>
+    <p class="pt-1 text-xs text-neutral-500" x-show="days > 0">Estimasi selesai ±<span x-text="days"></span> hari setelah barang diterima.</p>
+    <p class="text-xs text-neutral-500">Harga final dikonfirmasi admin setelah kondisi barang dicek.</p>
   </div>
 
-  <button class="btn w-full py-3" :disabled="tooMany">Kirim Pesanan</button>
+  {{-- Bar bawah: total + kirim (melekat di bawah layar HP, di atas menu tab) --}}
+  <div class="sticky bottom-[4.5rem] z-20 -mx-4 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border lg:bottom-4">
+    <div class="mx-auto flex max-w-3xl items-center gap-3">
+      <div class="min-w-0 flex-1">
+        <p class="text-[11px] uppercase text-neutral-500">Estimasi total</p>
+        <p class="truncate text-xl font-black text-red-600" x-text="'Rp ' + fmt(total)"></p>
+      </div>
+      <button class="btn shrink-0 !px-6 !py-3 text-base disabled:opacity-50" :disabled="tooMany || subtotal === 0">Kirim Pesanan</button>
+    </div>
+  </div>
 </form>
 @endsection

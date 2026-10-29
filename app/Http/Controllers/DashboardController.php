@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $orders   = fn () => Order::visibleTo($user);
 
         $income = Payment::whereDate('paid_at', today())
-            ->when($branchId, fn ($q) => $q->whereHas('order', fn ($o) => $o->where('branch_id', $branchId)))
+            ->when($branchId !== null, fn ($q) => $q->whereHas('order', fn ($o) => $o->where('branch_id', $branchId)))
             ->sum('amount');
 
         $stats = [

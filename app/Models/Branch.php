@@ -16,4 +16,8 @@ class Branch extends Model
     {
         return $this->qris_path ? Storage::disk('public')->url($this->qris_path) : null;
     }
+        public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
 }

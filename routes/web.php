@@ -60,8 +60,10 @@ Route::middleware('auth')->group(function () {
     // OWNER + ADMIN
     Route::middleware('role:owner,admin')->group(function () {
         Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
-        Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
-        Route::patch('/staff/{user}', [StaffController::class, 'toggle'])->whereNumber('user')->name('staff.toggle');
+Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+Route::put('/staff/{user}', [StaffController::class, 'update'])->whereNumber('user')->name('staff.update');
+Route::patch('/staff/{user}', [StaffController::class, 'toggle'])->whereNumber('user')->name('staff.toggle');
+Route::delete('/staff/{user}', [StaffController::class, 'destroy'])->whereNumber('user')->name('staff.destroy');
 
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 

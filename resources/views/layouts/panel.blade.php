@@ -2,15 +2,16 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title', 'Panel') - Clean Shoes Jejak Suci</title>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
-  <style>[x-cloak]{display:none!important}</style>
+  <style>[x-cloak]{display:none!important} .safe-b{padding-bottom:env(safe-area-inset-bottom)}</style>
 </head>
 <body class="bg-neutral-100 text-neutral-800" x-data="{ open: false }">
 @php
   $role = auth()->user()->role;
+  $isCustomer = $role === 'customer';
   $menu = match ($role) {
     'owner' => [
         ['Dashboard','dashboard'], ['Pesanan','orders.index'], ['Pelanggan','customers.index'],
@@ -29,12 +30,25 @@
         ['Pesan Cucian','portal.order.create'],
     ],
   };
+
+  $isActive = fn ($route) => match ($route) {
+    'cms.settings'  => request()->routeIs('cms.*'),
+    'portal.orders' => request()->routeIs('portal.orders', 'portal.show'),
+    'orders.index'  => request()->routeIs('orders.index', 'orders.show'),
+    default         => request()->routeIs($route),
+  };
+
+  $tabs = [
+    ['Akun',    'portal.index',        '🏠'],
+    ['Pesanan', 'portal.orders',       '🧺'],
+    ['Pesan',   'portal.order.create', '➕'],
+  ];
 @endphp
 
 <div class="flex min-h-screen">
-  {{-- Sidebar --}}
+  {{-- Sidebar (customer: hanya desktop) --}}
   <aside :class="open ? 'translate-x-0' : '-translate-x-full'"
-         class="fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-neutral-950 text-neutral-100 transition lg:static lg:translate-x-0">
+         class="fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-neutral-950 text-neutral-100 transition lg:static lg:translate-x-0 {{ $isCustomer ? 'hidden lg:block' : '' }}">
     <div class="border-b border-neutral-800 px-5 py-5">
       <a href="{{ route('home') }}" class="block leading-none">
         <span class="block text-xl font-black uppercase tracking-tight">👟 Clean Shoes</span>
@@ -47,16 +61,8 @@
     </div>
     <nav class="space-y-1 p-3">
       @foreach ($menu as [$label, $route])
-        @php
-          $active = match ($route) {
-            'cms.settings'  => request()->routeIs('cms.*'),
-            'portal.orders' => request()->routeIs('portal.orders', 'portal.show'),
-            'orders.index'  => request()->routeIs('orders.index', 'orders.show'),
-            default         => request()->routeIs($route),
-          };
-        @endphp
         <a href="{{ route($route) }}"
-           class="block rounded-lg px-3 py-2 text-sm font-medium {{ $active ? 'bg-red-600 text-white' : 'text-neutral-300 hover:bg-neutral-800 hover:text-white' }}">
+           class="block rounded-lg px-3 py-2 text-sm font-medium {{ $isActive($route) ? 'bg-red-600 text-white' : 'text-neutral-300 hover:bg-neutral-800 hover:text-white' }}">
           {{ $label }}
         </a>
       @endforeach
@@ -64,18 +70,31 @@
   </aside>
 
   <div class="flex min-w-0 flex-1 flex-col">
-    <header class="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
-      <button @click="open = !open" class="rounded-lg p-2 hover:bg-neutral-100 lg:hidden">☰</button>
-      <h1 class="text-lg font-semibold">@yield('title')</h1>
-      <div class="flex items-center gap-3 text-sm">
-        <a href="{{ route('profile.edit') }}" class="text-neutral-600 hover:text-red-600">{{ auth()->user()->name }}</a>
+    <header class="sticky top-0 z-30 flex items-center justify-between gap-2 bg-white px-4 py-3 shadow-sm">
+      @if ($isCustomer)
+        <a href="{{ route('home') }}" class="flex items-center gap-2 lg:hidden">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-red-600 text-base">👟</span>
+          <span class="text-sm font-black uppercase leading-none tracking-tight">Clean Shoes</span>
+        </a>
+        <h1 class="hidden text-lg font-semibold lg:block">@yield('title')</h1>
+      @else
+        <button @click="open = !open" class="rounded-lg p-2 hover:bg-neutral-100 lg:hidden">☰</button>
+        <h1 class="truncate text-lg font-semibold">@yield('title')</h1>
+      @endif
+
+      <div class="flex items-center gap-2 text-sm">
+        <a href="{{ route('profile.edit') }}" class="hidden max-w-[10rem] truncate text-neutral-600 hover:text-red-600 sm:block">{{ auth()->user()->name }}</a>
         <form method="POST" action="{{ route('logout') }}">@csrf
           <button class="btn-light">Keluar</button>
         </form>
       </div>
     </header>
 
-    <main class="flex-1 space-y-4 p-4 md:p-6">
+    <main class="flex-1 space-y-4 p-4 md:p-6 {{ $isCustomer ? 'pb-28 lg:pb-6' : '' }}">
+      @if ($isCustomer)
+        <h1 class="text-xl font-extrabold lg:hidden">@yield('title')</h1>
+      @endif
+
       @if (session('success'))
         <div class="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">{{ session('success') }}</div>
       @endif
@@ -88,5 +107,20 @@
     </main>
   </div>
 </div>
+
+{{-- Menu tab bawah (customer, mobile) --}}
+@if ($isCustomer)
+  <nav class="safe-b fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 backdrop-blur lg:hidden">
+    <div class="mx-auto grid max-w-md grid-cols-3">
+      @foreach ($tabs as [$label, $route, $icon])
+        @php $on = $isActive($route); @endphp
+        <a href="{{ route($route) }}" class="flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold {{ $on ? 'text-red-600' : 'text-neutral-500' }}">
+          <span class="grid h-8 w-12 place-items-center rounded-full text-lg {{ $on ? 'bg-red-100' : '' }}">{{ $icon }}</span>
+          {{ $label }}
+        </a>
+      @endforeach
+    </div>
+  </nav>
+@endif
 </body>
 </html>

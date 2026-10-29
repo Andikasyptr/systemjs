@@ -13,8 +13,9 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
+        $scope    = auth()->user()->branchScope();
         $month    = $request->input('month', now()->format('Y-m'));
-        $branchId = $request->input('branch_id');
+        $branchId = $scope ?? $request->input('branch_id');   // owner cabang: dikunci
         $start    = Carbon::parse($month . '-01')->startOfMonth();
         $end      = $start->copy()->endOfMonth();
 
@@ -37,10 +38,12 @@ class ReportController extends Controller
         $totalCashIn = $cashIn->sum();
 
         $receivable = $orders()->where('payment_status', '!=', 'lunas')
+            ->whereNotIn('status', ['menunggu'])
             ->selectRaw('COALESCE(SUM(total - paid_amount),0) as s')->value('s');
 
         return view('reports.index', [
-            'month' => $month, 'branchId' => $branchId, 'branches' => Branch::all(),
+            'month' => $month, 'branchId' => $branchId,
+            'branches' => $scope ? Branch::where('id', $scope)->get() : Branch::all(),
             'grossSales' => $grossSales, 'discounts' => $discounts, 'netSales' => $netSales,
             'expenses' => $expenses, 'totalExpense' => $totalExpense, 'netProfit' => $netProfit,
             'cashIn' => $cashIn, 'totalCashIn' => $totalCashIn, 'receivable' => $receivable,

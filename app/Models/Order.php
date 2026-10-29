@@ -85,14 +85,13 @@ public function scopeVisibleTo($query, User $user)
 {
     $branchId = $user->branchScope();
 
-    return $branchId ? $query->where('branch_id', $branchId) : $query;
+    return $branchId === null ? $query : $query->where('branch_id', $branchId);
 }
 
-// 403 jika staf membuka pesanan cabang lain
 public function authorizeFor(User $user): void
 {
     $branchId = $user->branchScope();
 
-    abort_if($branchId && $this->branch_id !== $branchId, 403, 'Pesanan ini milik cabang lain.');
+    abort_if($branchId !== null && (int) $this->branch_id !== $branchId, 403, 'Pesanan ini milik cabang lain.');
 }
 }
