@@ -44,7 +44,7 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
-        'mysql' => [
+       'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
@@ -59,10 +59,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => [
-                PDO::ATTR_PERSISTENT => false,
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-            ],
+            'options' => [],
         ],
 
         'mariadb' => [
