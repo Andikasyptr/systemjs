@@ -7,9 +7,9 @@ mkdir -p storage/framework/cache storage/framework/sessions storage/framework/vi
          storage/app/public/gallery storage/app/public/qris storage/app/public/order-photos
 chown -R www-data:www-data storage bootstrap/cache
 
-art() { runuser -u www-data -- php artisan "$@";++ }
+art() { runuser -u www-data -- php artisan "$@"; }
 
-# Hapus cache lama agar membaca Environment Variables dari Render dengan benar
+# Bersihkan cache lama agar membaca Environment Variables dari Render
 art config:clear
 art route:clear
 art view:clear
