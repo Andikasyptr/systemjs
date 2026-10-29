@@ -8,27 +8,40 @@
     pct: {{ $customer->discount_percent }},
     items: [{ service_id: '{{ $selectedId ?? '' }}', item_name: '', qty: 1 }],
     previews: [],
-    tooMany: false,
+    tooLarge: false,
     add() { this.items.push({ service_id: '', item_name: '', qty: 1 }) },
     find(id) { return this.services.find(s => s.id == id) },
     line(i) { const s = this.find(i.service_id); return s ? s.price * i.qty : 0 },
     get subtotal() { return this.items.reduce((t, i) => t + this.line(i), 0) },
     get discount() { return Math.floor(this.subtotal * this.pct / 100) },
     get total() { return this.subtotal - this.discount },
-    get days() { return Math.max(0, ...this.items.map(i => this.find(i.service_id)?.days || 0)) },
+    get days() { return Math.max(2, ...this.items.map(i => this.find(i.service_id)?.days || 2)) },
     fmt(n) { return new Intl.NumberFormat('id-ID').format(n) },
     pick(e) {
-      const files = Array.from(e.target.files);
-      this.tooMany = files.length > 5;
-      if (this.tooMany) { e.target.value = ''; this.previews = []; return; }
-      this.previews = files.map(f => URL.createObjectURL(f));
+      const file = e.target.files[0];
+      if (!file) {
+        this.previews = [];
+        this.tooLarge = false;
+        return;
+      }
+      
+      // Batas maksimal dinaikkan menjadi 20 MB (20 * 1024 * 1024 bytes)
+      if (file.size > 20 * 1024 * 1024) {
+        this.tooLarge = true;
+        e.target.value = ''; 
+        this.previews = [];
+        return;
+      }
+
+      this.tooLarge = false;
+      this.previews = [URL.createObjectURL(file)];
     }
   }">
   @csrf
 
   {{-- 1. Cabang --}}
   <div class="card !p-4">
-    <p class="mb-2 text-sm font-bold">1. Antar ke cabang</p>
+    <p class="mb-2 text-sm font-bold">Antar ke cabang</p>
     <select name="branch_id" class="input !py-3" required>
       @foreach ($branches as $b)
         <option value="{{ $b->id }}" @selected(old('branch_id') == $b->id)>{{ $b->name }}</option>
@@ -50,7 +63,7 @@
         </div>
 
         <select :name="`items[${idx}][service_id]`" x-model="item.service_id" class="input !py-3" required>
-          <option value="">- pilih treatment -</option>
+          <option value="">Pilih treatment</option>
           @foreach ($services as $s)
             <option value="{{ $s->id }}">[{{ ucfirst($s->category) }}] {{ $s->name }} — Rp {{ number_format($s->price, 0, ',', '.') }}</option>
           @endforeach
@@ -77,20 +90,25 @@
   <div class="card space-y-3 !p-4">
     <div>
       <p class="text-sm font-bold">3. Foto barang</p>
-      <p class="text-xs text-neutral-500">Satu foto cukup jika barangnya sama dengan beberapa treatment. Jika barang berbeda, pilih beberapa foto (maks 5, 4 MB per foto). Foto dihapus otomatis setelah 1 bulan.</p>
+      <p class="text-xs text-neutral-500">
+        💡 <strong class="text-neutral-700">Cukup 1 foto saja!</strong> Letakkan dan kumpulkan semua barang dalam satu frame foto berdampingan (maksimal 20 MB). Foto dihapus otomatis setelah 1 bulan.
+      </p>
     </div>
 
     <label class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-neutral-300 p-6 text-center active:bg-red-50">
       <span class="text-3xl">📷</span>
-      <span class="text-sm font-semibold">Ambil / pilih foto</span>
-      <input type="file" name="photos[]" accept="image/*" multiple class="sr-only" @change="pick($event)">
+      <span class="text-sm font-semibold">Ambil / pilih foto kumpulan barang</span>
+      <input type="file" name="photos[]" accept="image/*" class="sr-only" @change="pick($event)" required>
     </label>
 
-    <p x-show="tooMany" x-cloak class="text-sm text-red-600">Maksimal 5 foto. Silakan pilih ulang.</p>
+    {{-- Pesan Error jika ukuran melebihi 20MB --}}
+    <p x-show="tooLarge" x-cloak class="text-sm font-semibold text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+      ⚠️ Ukuran gambar melebihi 20 MB. Mohon pilih foto lain yang ukurannya lebih kecil.
+    </p>
 
-    <div x-show="previews.length" x-cloak class="grid grid-cols-3 gap-2 sm:grid-cols-5">
+    <div x-show="previews.length" x-cloak class="grid grid-cols-1 gap-2">
       <template x-for="(src, i) in previews" :key="i">
-        <img :src="src" class="aspect-square w-full rounded-lg border object-cover" alt="Pratinjau foto">
+        <img :src="src" class="max-h-60 w-full rounded-lg border object-contain bg-neutral-50 p-1" alt="Pratinjau foto barang">
       </template>
     </div>
   </div>
@@ -109,14 +127,14 @@
     <p class="text-xs text-neutral-500">Harga final dikonfirmasi admin setelah kondisi barang dicek.</p>
   </div>
 
-  {{-- Bar bawah: total + kirim (melekat di bawah layar HP, di atas menu tab) --}}
+  {{-- Bar bawah: total + kirim --}}
   <div class="sticky bottom-[4.5rem] z-20 -mx-4 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border lg:bottom-4">
     <div class="mx-auto flex max-w-3xl items-center gap-3">
       <div class="min-w-0 flex-1">
         <p class="text-[11px] uppercase text-neutral-500">Estimasi total</p>
         <p class="truncate text-xl font-black text-red-600" x-text="'Rp ' + fmt(total)"></p>
       </div>
-      <button class="btn shrink-0 !px-6 !py-3 text-base disabled:opacity-50" :disabled="tooMany || subtotal === 0">Kirim Pesanan</button>
+      <button class="btn shrink-0 !px-6 !py-3 text-base disabled:opacity-50" :disabled="subtotal === 0 || tooLarge">Kirim Pesanan</button>
     </div>
   </div>
 </form>

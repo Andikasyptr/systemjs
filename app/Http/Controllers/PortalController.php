@@ -86,15 +86,15 @@ class PortalController extends Controller
         return view('portal.orders', compact('customer', 'orders', 'counts', 'tab'));
     }
 
-   public function show(Order $order)
-{
-    $customer = $this->resolveCustomer();
-    abort_unless($order->customer_id === $customer->id, 403);
+    public function show(Order $order)
+    {
+        $customer = $this->resolveCustomer();
+        abort_unless($order->customer_id === $customer->id, 403);
 
-    $order->load('items.service', 'payments', 'branch', 'photos');
+        $order->load('items.service', 'payments', 'branch', 'photos');
 
-    return view('portal.show', compact('order', 'customer'));
-}
+        return view('portal.show', compact('order', 'customer'));
+    }
 
     public function create(Request $request)
     {
@@ -111,73 +111,78 @@ class PortalController extends Controller
     }
 
     public function store(Request $request)
-{
-    $customer = $this->resolveCustomer();
+    {
+        $customer = $this->resolveCustomer();
 
-    $data = $request->validate([
-        'branch_id'          => 'required|exists:branches,id',
-        'notes'              => 'nullable|string|max:500',
-        'items'              => 'required|array|min:1|max:20',
-        'items.*.service_id' => ['required', Rule::exists('services', 'id')->where('is_active', true)],
-        'items.*.item_name'  => 'required|string|max:100',
-        'items.*.qty'        => 'required|integer|min:1|max:20',
-        'photos'             => 'nullable|array|max:5',
-        'photos.*'           => 'image|mimes:jpg,jpeg,png,webp|max:4096',
-    ], [
-        'photos.max'   => 'Maksimal 5 foto.',
-        'photos.*.max' => 'Ukuran tiap foto maksimal 4 MB.',
-    ]);
-
-    $order = DB::transaction(function () use ($data, $customer, $request) {
-        $order = Order::create([
-            'invoice_no'  => Order::generateInvoice(),
-            'customer_id' => $customer->id,
-            'branch_id'   => $data['branch_id'],
-            'created_by'  => auth()->id(),
-            'status'      => 'menunggu',
-            'source'      => 'online',
-            'notes'       => $data['notes'] ?? null,
+        $data = $request->validate([
+            'branch_id'          => 'required|exists:branches,id',
+            'notes'              => 'nullable|string|max:500',
+            'items'              => 'required|array|min:1|max:20',
+            'items.*.service_id' => ['required', Rule::exists('services', 'id')->where('is_active', true)],
+            'items.*.item_name'  => 'required|string|max:100',
+            'items.*.qty'        => 'required|integer|min:1|max:20',
+            'photos'             => 'required|array|min:1',
+            'photos.*'           => 'image|mimes:jpg,jpeg,png,webp|max:20480', // Maksimal 20 MB (20480 KB)
+        ], [
+            'photos.required' => 'Foto barang wajib diunggah.',
+            'photos.*.image'  => 'File yang diunggah harus berupa gambar.',
+            'photos.*.mimes'  => 'Format foto harus berjenis: jpg, jpeg, png, atau webp.',
+            'photos.*.max'    => 'Ukuran foto maksimal 20 MB.',
         ]);
 
-        $subtotal = 0;
-        $maxDays  = 0;
-
-        foreach ($data['items'] as $row) {
-            $svc  = Service::findOrFail($row['service_id']);
-            $line = $svc->price * $row['qty'];
-
-            $order->items()->create([
-                'service_id' => $svc->id,
-                'item_name'  => $row['item_name'],
-                'qty'        => $row['qty'],
-                'price'      => $svc->price,
-                'subtotal'   => $line,
+        $order = DB::transaction(function () use ($data, $customer, $request) {
+            $order = Order::create([
+                'invoice_no'  => Order::generateInvoice(),
+                'customer_id' => $customer->id,
+                'branch_id'   => $data['branch_id'],
+                'created_by'  => auth()->id(),
+                'status'      => 'menunggu',
+                'source'      => 'online',
+                'notes'       => $data['notes'] ?? null,
             ]);
 
-            $subtotal += $line;
-            $maxDays   = max($maxDays, $svc->duration_days);
-        }
+            $subtotal = 0;
+            $maxDays  = 0;
 
-        // Foto barang (satu foto berlaku untuk semua treatment di pesanan ini)
-        foreach ($request->file('photos', []) as $file) {
-            $order->photos()->create(['path' => $file->store('order-photos', 'public')]);
-        }
+            foreach ($data['items'] as $row) {
+                $svc  = Service::findOrFail($row['service_id']);
+                $line = $svc->price * $row['qty'];
 
-        $discount = intdiv($subtotal * $customer->discount_percent, 100);
+                $order->items()->create([
+                    'service_id' => $svc->id,
+                    'item_name'  => $row['item_name'],
+                    'qty'        => $row['qty'],
+                    'price'      => $svc->price,
+                    'subtotal'   => $line,
+                ]);
 
-        $order->update([
-            'subtotal'          => $subtotal,
-            'discount'          => $discount,
-            'total'             => $subtotal - $discount,
-            'estimated_done_at' => now()->addDays($maxDays)->toDateString(),
-        ]);
+                $subtotal += $line;
+                $maxDays   = max($maxDays, $svc->duration_days);
+            }
 
-        return $order;
-    });
+            // Simpan foto barang gabungan
+            foreach ($request->file('photos', []) as $file) {
+                $order->photos()->create(['path' => $file->store('order-photos', 'public')]);
+            }
 
-    return redirect()->route('portal.show', $order)
-        ->with('success', 'Pesanan terkirim! Admin akan mengonfirmasi lewat WhatsApp. Silakan antar barang ke cabang yang dipilih.');
-}
+            $discount = intdiv($subtotal * $customer->discount_percent, 100);
+
+            // Estimasi minimal 2 hari atau sesuai durasi layanan terlama
+            $finalDays = max(2, $maxDays);
+
+            $order->update([
+                'subtotal'          => $subtotal,
+                'discount'          => $discount,
+                'total'             => $subtotal - $discount,
+                'estimated_done_at' => now()->addDays($finalDays)->toDateString(),
+            ]);
+
+            return $order;
+        });
+
+        return redirect()->route('portal.show', $order)
+            ->with('success', 'Pesanan terkirim! Admin akan mengonfirmasi lewat WhatsApp. Silakan antar barang ke cabang yang dipilih.');
+    }
 
     public function cancel(Order $order)
     {
