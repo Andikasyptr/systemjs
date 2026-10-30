@@ -17,9 +17,8 @@
 
 @foreach ($branches as $b)
   <div class="card">
-    <form method="POST" action="{{ route('cms.branches.update', $b->id) }}" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-6">
-      @csrf 
-      @method('PUT')
+    <form method="POST" action="{{ route('cms.branches.update', $b) }}" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-6">
+      @csrf @method('PUT')
       <div class="md:col-span-2"><label class="label">Nama cabang</label><input name="name" value="{{ $b->name }}" class="input" required></div>
       <div class="md:col-span-4"><label class="label">Alamat lengkap</label><input name="address" value="{{ $b->address }}" class="input" required></div>
       <div class="md:col-span-2"><label class="label">No. WhatsApp cabang</label><input name="whatsapp" value="{{ $b->whatsapp }}" class="input" placeholder="0812xxxxxxx"></div>
@@ -47,15 +46,11 @@
       </div>
 
       <div class="flex gap-2 md:col-span-6">
-        <button class="btn" type="submit">Simpan</button>
+        <button class="btn">Simpan</button>
         <button type="submit" form="del-branch-{{ $b->id }}" class="btn-danger" onclick="return confirm('Hapus cabang ini?')">Hapus</button>
       </div>
     </form>
-    
-    <form id="del-branch-{{ $b->id }}" method="POST" action="{{ route('cms.branches.destroy', $b->id) }}">
-      @csrf 
-      @method('DELETE')
-    </form>
+    <form id="del-branch-{{ $b->id }}" method="POST" action="{{ route('cms.branches.destroy', $b) }}">@csrf @method('DELETE')</form>
   </div>
 @endforeach
 @endsection

@@ -37,6 +37,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $brand }} | Jasa Cuci Sepatu, Tas & Helm</title>
     <meta name="description" content="{{ $site['meta_description'] }}">
+    <meta name="google-site-verification" content="tErh83ez1uHx09wPUAWDr4h3k3GFrlcHD-hBuFTP2No" />
 
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
