@@ -125,4 +125,13 @@ class OrderController extends Controller
 
         return back()->with('success', 'Status pesanan diperbarui.');
     }
+
+
+    public function print(Order $order)
+    {
+        $order->authorizeFor(auth()->user());
+        $order->load('items.service', 'customer', 'branch');
+
+        return view('orders.print', compact('order'));
+    }
 }

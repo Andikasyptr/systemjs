@@ -20,6 +20,9 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
+
+
+
 // ---------- PUBLIK ----------
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/cek-pesanan', [PublicController::class, 'track'])->middleware('throttle:20,1')->name('track');
@@ -94,6 +97,7 @@ Route::delete('/staff/{user}', [StaffController::class, 'destroy'])->whereNumber
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->whereNumber('order')->name('orders.status');
+        Route::get('/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
 
         Route::get('/inquiries', [InquiryController::class, 'index'])->name('inquiries.index');
         Route::patch('/inquiries/{inquiry}', [InquiryController::class, 'update'])->whereNumber('inquiry')->name('inquiries.update');

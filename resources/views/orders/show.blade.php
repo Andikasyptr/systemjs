@@ -7,11 +7,17 @@
   $rp        = fn ($n) => 'Rp ' . number_format($n, 0, ',', '.');
 @endphp
 
-<a href="{{ route('orders.index') }}" class="text-sm text-neutral-600 hover:text-red-600">← Daftar Pesanan</a>
+{{-- Tombol Kembali & Cetak (Membuka halaman print khusus) --}}
+<div class="flex items-center justify-between mb-4">
+  <a href="{{ route('orders.index') }}" class="text-sm text-neutral-600 hover:text-red-600">← Daftar Pesanan</a>
+  <a href="{{ route('orders.print', $order) }}" target="_blank" class="btn flex items-center gap-2 !py-2 !px-4 text-sm font-bold shadow-sm">
+    <span>🖨️</span> Cetak Struk
+  </a>
+</div>
 
 {{-- ADMIN: konfirmasi pesanan online --}}
 @if ($order->status === 'menunggu' && $role === 'admin')
-  <div class="rounded-xl bg-yellow-50 p-5 ring-1 ring-yellow-300">
+  <div class="rounded-xl bg-yellow-50 p-5 ring-1 ring-yellow-300 mb-4">
     <p class="font-bold text-yellow-900">🔔 Pesanan online menunggu konfirmasi</p>
     <p class="mt-1 text-sm text-yellow-800">Pastikan barang sudah diterima dan kondisinya dicek, lalu konfirmasi. Customer akan melihat statusnya berubah.</p>
 
@@ -83,7 +89,7 @@
         </tbody>
         <tfoot class="text-sm">
           <tr><td colspan="3" class="td text-right">Subtotal</td><td class="td text-right">{{ $rp($order->subtotal) }}</td></tr>
-          <tr><td colspan="3" class="td text-right">Diskon member</td><td class="td text-right text-red-600">- {{ $rp($order->discount) }}</td></tr>
+          <tr><td colspan="3" class="td text-right">Diskon member</td><td class="td text-right text-red-600">{{ $rp($order->discount) }}</td></tr>
           <tr class="font-bold"><td colspan="3" class="td text-right">Total</td><td class="td text-right">{{ $rp($order->total) }}</td></tr>
           <tr><td colspan="3" class="td text-right">Sudah dibayar</td><td class="td text-right">{{ $rp($order->paid_amount) }}</td></tr>
           <tr class="font-bold text-red-600"><td colspan="3" class="td text-right">Sisa</td><td class="td text-right">{{ $rp($order->remaining) }}</td></tr>
